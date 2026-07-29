@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field, ValidationError
+from typing import Self
+
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 # SEO Audit has 3 pillars: 
 # technical, on-page, off-page
@@ -16,19 +18,43 @@ class OffPageSEO(BaseModel):
     referring_domains: int = Field(default=0, ge=0)
     brand_mentions: int = Field(default=0, ge=0)
 
+#3rd pillar
 class OnPageSEO(BaseModel):
     title: str = Field(min_length=15, max_length=60)
     meta_description: str = Field(default="", max_length=160)
     search_intent: str = Field(default="", max_length=30)
     keywords: list[str] = Field(default=[])
     
-good_data = '{"title": "How to cure cancer", "meta_description": "A guide to cure the deadliest desease on earth", "search_intent": "informational", "keywords":["cancer", "disease"]}'
-on = OnPageSEO.model_validate_json(good_data)
-print(on)
+class SEOAudit(BaseModel):
+    website: str = Field(frozen=True)
+    technical: TechnicalSEO | None = None
+    off_page: OffPageSEO | None = None
+    on_page: OnPageSEO | None = None
+    
+    @model_validator(mode="after")
+    def validate_one_pillar_filled(self):
+        if not any ([self.technical, self.off_page, self.on_page]):
+            raise ValueError()
+        return self
 
-bad_data = '{"meta_description": "A guide to cure the deadliest desease on earth", "search_intent": "informational", "keywords":["cancer", "disease"]}'
+good_data = """
+    {       
+        "website": "https://kavio.tech/", 
+        "on_page": 
+        {
+            "title": "KAVIO - AI products & agentic services", 
+            "meta_description": "KAVIO is an AI agency for companies world wide. Products you can buy and agents we build for you - from answer-engine visibility to full agentic automation.", 
+            "search_intent": "commercial", 
+            "keywords":["GEO", "AEO", "Agent Experience"]
+        }
+    }
+    """
+aud = SEOAudit.model_validate_json(good_data)
+print(aud)
+
 try:
-    on = OnPageSEO.model_validate_json(bad_data)
-    print(on)
+    bad_data = '{"website": "https://google.com/"}'
+    aud = SEOAudit.model_validate_json(bad_data)
+    print(aud)
 except ValidationError as e:
-    print("Rejected, missing required field!")
+    print("\nRejected, you should choose at least 1 pillar")
