@@ -16,17 +16,19 @@ class OffPageSEO(BaseModel):
     referring_domains: int = Field(default=0, ge=0)
     brand_mentions: int = Field(default=0, ge=0)
 
-good_data = '{"backlinks": 5, "referring_domains": 2}'
-tec = OffPageSEO.model_validate_json(good_data)
-print(tec)
+class OnPageSEO(BaseModel):
+    title: str = Field(min_length=15, max_length=60)
+    meta_description: str = Field(default="", max_length=160)
+    search_intent: str = Field(default="", max_length=30)
+    keywords: list[str] = Field(default=[])
+    
+good_data = '{"title": "How to cure cancer", "meta_description": "A guide to cure the deadliest desease on earth", "search_intent": "informational", "keywords":["cancer", "disease"]}'
+on = OnPageSEO.model_validate_json(good_data)
+print(on)
 
-default_data = '{''}'
-tec = OffPageSEO.model_validate_json(default_data)
-print(tec)
-
+bad_data = '{"meta_description": "A guide to cure the deadliest desease on earth", "search_intent": "informational", "keywords":["cancer", "disease"]}'
 try:
-    bad_data = '{"backlinks": 3, "referring_domains": 2, "brand_mentions": "False"}'
-    tec = OffPageSEO.model_validate_json(bad_data)
-    print(tec)
+    on = OnPageSEO.model_validate_json(bad_data)
+    print(on)
 except ValidationError as e:
-    print("Rejected, contain incompatible field!")
+    print("Rejected, missing required field!")
